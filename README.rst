@@ -94,6 +94,7 @@ If the pipeline is useful to your science, we kindly ask you to cite:
 Christiaens, Samland, Gasman, Temmink & Perotti, subm. to ASCL (DOI link to be provided soon).
 
 As well as some of the following publications:
+
 - `Bushouse et al. (2023)<https://ui.adsabs.harvard.edu/abs/2023zndo...7795697B/abstract>`_ for the jwst pipeline (or similar reference, depending on the exact jwst pipeline version you use);
 - `Gomez Gonzalez et al. (2017) <https://ui.adsabs.harvard.edu/abs/2017AJ....154....7G/abstract>`_ and `Christiaens et al. (2023) <https://ui.adsabs.harvard.edu/abs/2023JOSS....8.4774C/abstract>`_ for VIP routines used in the pipeline;
 - `Gasman et al. (2023)<https://ui.adsabs.harvard.edu/abs/2023A%26A...673A.102G/abstract>`_ if you set the option psff=True (i.e. point-source specific reference files);
