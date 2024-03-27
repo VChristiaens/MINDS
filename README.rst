@@ -6,7 +6,7 @@ MINDS
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
     :target: https://github.com/VChristiaens/MINDS/blob/master/LICENSE
 
-This repository contains a hybrid pipeline based on the `jwst` pipeline and routines from the VIP package for the reduction of JWST MIRI-MRS data.
+This repository contains a hybrid pipeline based on the ``jwst`` pipeline and routines from the ``VIP`` package for the reduction of JWST MIRI-MRS data.
 The pipeline was developed by the MINDS - MIRI mid-INfrared Disk Survey - GTO team in an attempt to compensate for some known weaknesses of the official jwst pipeline to improve the quality of spectrum extracted from MIRI-MRS data. This is done by leveraging the capabilities of VIP, another large data reduction package used in the field of high-contrast imaging.
 The front end of the pipeline is a highly automated Jupyter notebook. Parameters are typically set in one cell at the beginning of the notebook, and the rest of the notebook can be run without any further modification.
 The Jupyter notebook format provides flexibility, enhanced visibility of intermediate and final results, more convenient troubleshooting, and straightforward incorporation of additional codes by the user to further analyse or exploit the results.
