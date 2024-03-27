@@ -13,7 +13,7 @@ The front end of the pipeline is a highly automated Jupyter notebook. Parameters
 
 Documentation
 -------------
-3 PDF files are available:
+3 PDF files are available in the docs folder:
 
 - Guidelines.pdf: provides guidelines to use the notebook, and answers to FAQ.
 - Flow_charts.pdf: provides troubleshooting tips in the form of flow charts.
