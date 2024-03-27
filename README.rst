@@ -1,9 +1,9 @@
 MINDS
 =====
 
-.. image:: https://img.shields.io/badge/Python-3.9%2C%203.10%2C%203.11-brightgreen.svg
+.. |customsub| image:: https://img.shields.io/badge/Python-3.9%2C%203.10%2C%203.11-brightgreen.svg
     :target: https://github.com/VChristiaens/MINDS
-.. image:: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
+.. |customsub| image:: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
     :target: https://github.com/VChristiaens/MINDS/blob/master/LICENSE
 
 This repository contains a hybrid pipeline based on the ``jwst`` pipeline and routines from the ``VIP`` package for the reduction of JWST MIRI-MRS data.
