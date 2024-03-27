@@ -1,15 +1,13 @@
 MINDS
 =====
 
-
 .. image:: https://img.shields.io/badge/Python-3.9%2C%203.10%2C%203.11-brightgreen.svg
     :target: https://github.com/VChristiaens/MINDS
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
     :target: https://github.com/VChristiaens/MINDS/blob/master/LICENSE
-::
 
-
-This repository contains the hybrid pipeline based on the `jwst` pipeline and leveraging routines from the VIP package that was developed by the MINDS - MIRI INfrared Disk Survey - GTO team for the reduction of MIRI-MRS data.
+This repository contains a hybrid pipeline based on the `jwst` pipeline and routines from the VIP package for the reduction of JWST MIRI-MRS data.
+The pipeline was developed by the MINDS - MIRI mid-INfrared Disk Survey - GTO team in an attempt to compensate some known weaknesses and further boost the quality of spectrum extracted from MIRI-MRS data.
 
 
 Documentation
@@ -79,15 +77,25 @@ The point of preserving the notebook is added flexibility, visibility, and easie
 Detailed instructions are provided in the Guidelines pdf.
 
 
+Publications that made use of the MINDS pipeline:
+-------------------------------------------------
+
+- `Perotti et al. (2023)<https://ui.adsabs.harvard.edu/abs/2023Natur.620..516P/abstract>`_
+- `Schwarz et al. (2024)<https://ui.adsabs.harvard.edu/abs/2024ApJ...962....8S/abstract>`_
+- `Temmink et al. (2024)<https://ui.adsabs.harvard.edu/abs/2024arXiv240313591T/abstract>`_
+
+
 Attribution
 -----------
 
+If the pipeline is useful to your science, we kindly ask you to cite:
+
 Christiaens, Samland, Gasman, Temmink & Perotti, subm. to ASCL (DOI link to be provided soon).
 
-We sincerely thank David Law and Patrick Kavanagh, whose notebook and script shared with us allowed us to kickstart this projet. We also thank Yannis Argyriou for very useful feedback throughout the development of this hybrid pipeline.
-
-We also kindly to the following publications:
+As well as some of the following publications:
 - `Bushouse et al. (2023)<https://ui.adsabs.harvard.edu/abs/2023zndo...7795697B/abstract>`_ for the jwst pipeline (or similar reference, depending on the exact jwst pipeline version you use);
-- `Gomez Gonzalez et al. (2017) <https://ui.adsabs.harvard.edu/abs/2017AJ....154....7G/abstract>`_ and `Christiaens et al. (2023) <https://ui.adsabs.harvard.edu/abs/2023JOSS....8.4774C/abstract>`_ for VIP routines;
-- `Gasman et al. (2023)<https://ui.adsabs.harvard.edu/abs/2023A%26A...673A.102G/abstract>`_ (if you use the psff=True option);
-- Temmink et al. (2024) for continuum subtraction [link to be provided soon].
+- `Gomez Gonzalez et al. (2017) <https://ui.adsabs.harvard.edu/abs/2017AJ....154....7G/abstract>`_ and `Christiaens et al. (2023) <https://ui.adsabs.harvard.edu/abs/2023JOSS....8.4774C/abstract>`_ for VIP routines used in the pipeline;
+- `Gasman et al. (2023)<https://ui.adsabs.harvard.edu/abs/2023A%26A...673A.102G/abstract>`_ if you set the option psff=True (i.e. point-source specific reference files);
+- `Temmink et al. (2024)<https://ui.adsabs.harvard.edu/abs/2024arXiv240313591T/abstract>`_ for continuum subtraction.
+
+We sincerely thank David Law and Patrick Kavanagh, whose notebook and script shared with us allowed us to kickstart this projet. We also thank Yannis Argyriou for very useful feedback throughout the development of this hybrid pipeline.
