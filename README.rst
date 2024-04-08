@@ -1,10 +1,12 @@
 MINDS
 =====
 
-|Pythonv| |License|
+|Pythonv| |ASCL| |License|
 
 .. |Pythonv| image:: https://img.shields.io/badge/Python-3.9%2C%203.10%2C%203.11-brightgreen.svg
             :target: https://github.com/VChristiaens/MINDS
+.. |ASCL| image:: https://img.shields.io/badge/ascl-2403.007-blue.svg?colorB=262255
+            :target: https://ascl.net/2403.007
 .. |License| image:: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
             :target: https://github.com/VChristiaens/MINDS/blob/master/LICENSE
 
@@ -93,7 +95,7 @@ Attribution
 
 If the pipeline is useful to your science, we kindly ask you to cite:
 
-Christiaens, Samland, Gasman, Temmink & Perotti, subm. to ASCL (DOI link to be provided soon).
+`Christiaens, Samland, Gasman, Temmink & Perotti (2024), ASCL <(https://ui.adsabs.harvard.edu/abs/2024ascl.soft03007C/abstract)>`_.
 
 As well as some of the following publications:
 
