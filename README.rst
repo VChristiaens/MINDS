@@ -95,7 +95,7 @@ Attribution
 
 If the pipeline is useful to your science, we kindly ask you to cite:
 
-`Christiaens, Samland, Gasman, Temmink & Perotti (2024), ASCL <(https://ui.adsabs.harvard.edu/abs/2024ascl.soft03007C/abstract)>`_.
+`Christiaens, Samland, Gasman, Temmink & Perotti (2024), ASCL<(https://ui.adsabs.harvard.edu/abs/2024ascl.soft03007C/abstract)>`_
 
 As well as some of the following publications:
 
