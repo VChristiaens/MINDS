@@ -17,7 +17,7 @@ requires-python = ">=3.9"
 dependencies = [
     "vip_hci>1.4.0",
     "opencv-python",
-    "jwst>1.14.0",
+    "jwst>=1.14.0",
     "spectres",
     "pybaselines",
     "scipy<1.10",
