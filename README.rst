@@ -28,7 +28,7 @@ TL;DR setup guide
 -----------------
 .. code-block:: bash
 
-    $ pip install git+https://github.com/VChristiaens/MINDS.git
+    pip install git+https://github.com/VChristiaens/MINDS.git
 
 Then launch and run the MINDS_reduction.ipynb notebook, after adapting the input path to your data.
 
@@ -48,13 +48,13 @@ for your environment):
 
 .. code-block:: bash
 
-  $ conda create -n minds_env python=3.11
+  conda create -n minds_env python=3.11
 
 Then, to activate it (assuming you named it as above):
 
 .. code-block:: bash
 
-  $ conda activate minds_env
+  conda activate minds_env
 
 
 The pipeline depends on two major packages: ``jwst`` and ``vip_hci``, which both come
@@ -65,7 +65,7 @@ all required dependencies is simply, once in the environment:
 
 .. code-block:: bash
 
-  $ pip install git+https://github.com/VChristiaens/MINDS.git
+  pip install git+https://github.com/VChristiaens/MINDS.git
 
 In most cases, you should not select the option to use point-source specific reference files (see flow charts).
 However, if you do, you will first have to download them here: https://dox.uliege.be/index.php/s/h4MM95IqFt8Gvce
