@@ -1,0 +1,75 @@
+[project]
+name = "minds"
+authors = [
+    {name = "Valentin Christiaens", email = "valentin.christiaens@uliege.be"},
+    {name = "Matthias Samland", email = "m.samland@mailbox.org"},
+]
+description = "Tools for reducing JWST MIRI/MRS data in the MINDS consortium"
+readme = "README.rst"
+license = { file = 'LICENSE' }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "vip_hci>1.4.0",
+    "opencv-python",
+    "jwst>1.13.0",
+    "spectres",
+    "pybaselines",
+    "scipy<1.10",
+    "ipywidgets>=8",
+    "notebook",
+]
+dynamic = ['version']
+
+[project.optional-dependencies]
+docs = [
+    "sphinx",
+    "sphinx-automodapi",
+    "numpydoc",
+]
+test = [
+    "pytest",
+    "pytest-doctestplus",
+    "flake8",
+    "flake8-pyproject",
+    "codecov",
+    "pytest-cov",
+]
+
+[project.urls]
+"Bug Tracker" = "https://github.com/VChristiaens/MINDS/issues"
+"Source Code" = "https://github.com/VChristiaens/MINDS"
+
+[build-system]
+requires = [
+    "setuptools>=60",
+    "setuptools_scm>=8.0",
+    "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "src/minds/_version.py"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.flake8]
+max-line-length = 130
+exclude = [
+    'docs',
+    '.tox',
+    '.eggs',
+    'build',
+    '*_version.py',
+]
+
+[tool.coverage.run]
+omit = [
+    "_version.py",
+]
