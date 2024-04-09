@@ -48,7 +48,7 @@ for your environment):
 
 .. code-block:: bash
 
-  $ conda create -n minds_env python=3.11 jupyter
+  $ conda create -n minds_env python=3.11
 
 Then, to activate it (assuming you named it as above):
 
