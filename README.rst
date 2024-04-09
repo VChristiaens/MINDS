@@ -43,7 +43,7 @@ We recommend using
 
 Before installing the package, it is **highly recommended to create a dedicated
 conda environment** to not mess up with the package versions in your base
-environment. This can be done easily with (replace ``vipenv`` by the name you want
+environment. This can be done easily with (replace ``minds_env `` by the name you want
 for your environment):
 
 .. code-block:: bash
@@ -57,7 +57,7 @@ Then, to activate it (assuming you named it as above):
   $ conda activate minds_env
 
 
-The pipeline depends on two major packages: jwst and vip_hci, which both come
+The pipeline depends on two major packages: ``jwst`` and ``vip_hci``, which both come
 with their own set of dependencies from the Python ecosystem, such as
 ``numpy``, ``scipy``, ``matplotlib``, ``pandas``, ``astropy``, ``scikit-learn``,
 ``scikit-image``, ``photutils`` and others. The most convenient way to install 
