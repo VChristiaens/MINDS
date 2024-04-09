@@ -17,7 +17,7 @@ requires-python = ">=3.9"
 dependencies = [
     "vip_hci>1.4.0",
     "opencv-python",
-    "jwst>1.13.0",
+    "jwst>1.14.0",
     "spectres",
     "pybaselines",
     "scipy<1.10",
@@ -39,6 +39,9 @@ test = [
     "flake8-pyproject",
     "codecov",
     "pytest-cov",
+]
+ray = [
+    "ray[default]"
 ]
 
 [project.urls]
