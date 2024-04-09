@@ -3,7 +3,7 @@ MINDS
 
 |Pythonv| |ASCL| |License|
 
-.. |Pythonv| image:: https://img.shields.io/badge/Python-3.9%2C%203.10%2C%203.11-brightgreen.svg
+.. |Pythonv| image:: https://img.shields.io/badge/Python-3.10%2C%203.11-brightgreen.svg
             :target: https://github.com/VChristiaens/MINDS
 .. |ASCL| image:: https://img.shields.io/badge/ascl-2403.007-blue.svg?colorB=262255
             :target: https://ascl.net/2403.007
@@ -28,7 +28,7 @@ TL;DR setup guide
 -----------------
 .. code-block:: bash
 
-    $ pip install -r requirements.txt
+    $ pip install git+https://github.com/VChristiaens/MINDS.git
 
 Then launch and run the MINDS_reduction.ipynb notebook, after adapting the input path to your data.
 
@@ -48,7 +48,7 @@ for your environment):
 
 .. code-block:: bash
 
-  $ conda create -n minds_env python=3.10 jupyter
+  $ conda create -n minds_env python=3.11
 
 Then, to activate it (assuming you named it as above):
 
@@ -65,7 +65,7 @@ all required dependencies is simply, once in the environment:
 
 .. code-block:: bash
 
-  $ pip install -r requirements.txt
+  $ pip install git+https://github.com/VChristiaens/MINDS.git
 
 In most cases, you should not select the option to use point-source specific reference files (see flow charts).
 However, if you do, you will first have to download them here: https://dox.uliege.be/index.php/s/h4MM95IqFt8Gvce
