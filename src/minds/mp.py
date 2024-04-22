@@ -178,7 +178,7 @@ def run_straylight(filename, outdir):
 
 def runspec2(filename, outdir, psff=False, psff_dir='./psff_ref/',
              phot_ver='9B.04.19', fringe_ver='2', pixel_replace_algo='mingrad',
-             dith_combi_method='drizzle'):
+             dith_combi_method='drizzle', cb_test=False):
     # This initial setup is just to make sure that we get the latest parameter reference files
     # pulled in for our files.  This is a temporary workaround to get around an issue with
     # how this pipeline calling method works.
@@ -189,43 +189,46 @@ def runspec2(filename, outdir, psff=False, psff_dir='./psff_ref/',
     spec2.output_dir = outdir
 
     # PSFF overrides
-    if psff:
-        hdu = fits.open(filename)
-        channel = hdu[0].header['CHANNEL']
-        band = hdu[0].header['BAND']
-        ifu = hdu[0].header['DETECTOR']
-        dith_num = hdu[0].header['PATT_NUM']
-        dith_dir = hdu[0].header['DITHDIRC']
-        hdu.close()
-
-        if band=='SHORT':
-            subband='A'
-        elif band=='MEDIUM':
-            subband='B'
-        elif band=='LONG':
-            subband='C'
-
-        if dith_dir=='NEGATIVE':
-            dith = 'neg'
-        elif dith_dir=='POSITIVE':
-            dith = 'pos'
-
-        spec2.photom.override_photom = join(psff_dir,
-                                            'PHOTOM/MIRI_FM_{}_{}_PHOTOM_{}_{}dither.fits'.format(ifu, channel+band, phot_ver, dith))
-        spec2.fringe.override_fringe = join(psff_dir,
-                                            'FRINGE/point_source_fringe_flat_{}dither{}_{}_v{}.fits'.format(dith, dith_num, channel+subband, fringe_ver))
+    if cb_test:
         spec2.flat_field.skip = True
-
-    # Assign_wcs overrides
-    # spec2.assign_wcs.override_distortion = 'myfile.asdf'
-    # spec2.assign_wcs.override_regions = 'myfile.asdf'
-    # spec2.assign_wcs.override_specwcs = 'myfile.asdf'
-    # spec2.assign_wcs.override_wavelengthrange = 'myfile.asdf'
-
-    # Flatfield overrides
-    # spec2.flat.override_flat = 'myfile.fits'
     else:
-        spec2.flat_field.skip = False
+        if psff:
+            hdu = fits.open(filename)
+            channel = hdu[0].header['CHANNEL']
+            band = hdu[0].header['BAND']
+            ifu = hdu[0].header['DETECTOR']
+            dith_num = hdu[0].header['PATT_NUM']
+            dith_dir = hdu[0].header['DITHDIRC']
+            hdu.close()
+
+            if band=='SHORT':
+                subband='A'
+            elif band=='MEDIUM':
+                subband='B'
+            elif band=='LONG':
+                subband='C'
+
+            if dith_dir=='NEGATIVE':
+                dith = 'neg'
+            elif dith_dir=='POSITIVE':
+                dith = 'pos'
+
+            spec2.photom.override_photom = join(psff_dir,
+                                                'PHOTOM/MIRI_FM_{}_{}_PHOTOM_{}_{}dither.fits'.format(ifu, channel+band, phot_ver, dith))
+            spec2.fringe.override_fringe = join(psff_dir,
+                                                'FRINGE/point_source_fringe_flat_{}dither{}_{}_v{}.fits'.format(dith, dith_num, channel+subband, fringe_ver))
+            spec2.flat_field.skip = True
+
+        # Assign_wcs overrides
+        # spec2.assign_wcs.override_distortion = 'myfile.asdf'
+        # spec2.assign_wcs.override_regions = 'myfile.asdf'
+        # spec2.assign_wcs.override_specwcs = 'myfile.asdf'
+        # spec2.assign_wcs.override_wavelengthrange = 'myfile.asdf'
+
+        # Flatfield overrides
+        # spec2.flat.override_flat = 'myfile.fits'
+        else:
+            spec2.flat_field.skip = False
 
     # Background
     spec2.bkg_subtract.skip = True
@@ -235,14 +238,21 @@ def runspec2(filename, outdir, psff=False, psff_dir='./psff_ref/',
     spec2.straylight.skip = True  # starting from v6e!
 
     # Fringe overrides
-    spec2.fringe.skip = False
+    if cb_test:
+        spec2.fringe.skip = True
+    else:
+        spec2.fringe.skip = False
+
 
     # Photom overrides
     # spec2.photom.override_photom = 'myfile.fits'
-    spec2.photom.skip = False
+    if cb_test:
+        spec2.photom.skip = True
+    else:
+        spec2.photom.skip = False
 
     # Residual fringe correction
-    if psff:
+    if psff or cb_test:
         spec2.residual_fringe.skip = True
     else:
         spec2.residual_fringe.skip = False
