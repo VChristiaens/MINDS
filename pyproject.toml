@@ -23,6 +23,7 @@ dependencies = [
     "scipy<1.10",
     "ipywidgets>=8",
     "notebook",
+    "ipympl",
 ]
 dynamic = ['version']
 
