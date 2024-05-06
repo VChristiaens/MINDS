@@ -1,12 +1,14 @@
 MINDS
 =====
 
-|Pythonv| |ASCL| |License|
+|Pythonv| |ASCL| |DOI| |License|
 
 .. |Pythonv| image:: https://img.shields.io/badge/Python-3.10%2C%203.11-brightgreen.svg
             :target: https://github.com/VChristiaens/MINDS
 .. |ASCL| image:: https://img.shields.io/badge/ascl-2403.007-blue.svg?colorB=262255
             :target: https://ascl.net/2403.007
+.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.11121180.svg
+            :target: https://zenodo.org/records/11121180
 .. |License| image:: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
             :target: https://github.com/VChristiaens/MINDS/blob/master/LICENSE
 
