@@ -43,7 +43,7 @@ def Baseline(Wavelength = [],
     F_clip = Flux[np.where(Wavelength < W_max_out)]
 
     Outliers = 1
-    while Outliers > 0:
+    while Outliers > 0 & WL > len(F):
         Filtered = sf(F, window_length=WL, polyorder=3)
         Filtered_clip = sf(F_clip, window_length=WL, polyorder=3)
         STD = scs(F_clip - Filtered_clip, sigma=3)[2]
