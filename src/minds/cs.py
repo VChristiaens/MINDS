@@ -20,7 +20,7 @@ from matplotlib.ticker import AutoMinorLocator
 from scipy.interpolate import interp1d as I1D
 from scipy.signal import savgol_filter as sf
 from spectres import spectres
-
+import pdb
 
 def Baseline(Wavelength = [],
              Flux       = [],
@@ -43,26 +43,42 @@ def Baseline(Wavelength = [],
     F_clip = Flux[np.where(Wavelength < W_max_out)]
 
     Outliers = 1
-    while Outliers > 0 & WL > len(F):
+    while Outliers > 0:
         Filtered = sf(F, window_length=WL, polyorder=3)
         Filtered_clip = sf(F_clip, window_length=WL, polyorder=3)
         STD = scs(F_clip - Filtered_clip, sigma=3)[2]
         Mask = (F - Filtered) > sigma_clip[0] * STD  ## 2 Sigma lines are masked
 
         Outliers = len(F[Mask])
-        print(Outliers)
+        npts = len(F[~Mask])
+        print("N pts in spectrum: {} ({} outlier): ".format(npts, Outliers))
         if Outliers > 0:
-            W, F = W[~Mask], F[~Mask]
-            pass
+            W_new, F_new = W[~Mask], F[~Mask]
+            if len(F_new[np.where(W_new < W_max_out)]) < WL:
+                break
+            else:
+                W, F = W_new.copy(), F_new.copy()
+                pass
         else:
             pass
         pass
+
+    # If first or last wavelength was filtered out, there'll be a problem.
+    if W[0] != Wavelength[0]:
+        W = np.array([Wavelength[0]]+W.tolist())
+        F = np.array([Flux[0]]+F.tolist())
+    if W[-1] != Wavelength[-1]:
+        W = np.array(W.tolist()+[Wavelength[-1]])
+        F = np.array(F.tolist()+[Flux[-1]])
 
     W_clip = W[np.where(W < W_max_out)]
     F_clip = F[np.where(W < W_max_out)]
 
     Filtered = sf(F, window_length=WL, polyorder=3)
-    Filtered_clip = sf(F_clip, window_length=WL, polyorder=3)
+    try:
+        Filtered_clip = sf(F_clip, window_length=WL, polyorder=3)
+    except:
+        pdb.set_trace()
     STD = scs(F_clip-Filtered_clip, sigma=3)[2]  ## STD over the masked Savgol-filter.
     FilterFull = spectres(Wavelength, W, Filtered)
     Mask = (Flux-FilterFull) < -sigma_clip[1]*STD  ## Masking all 3sigma downwards spikes.
@@ -76,7 +92,20 @@ def Baseline(Wavelength = [],
                                max_iter      = MI,
                                lam           = Lam,
                                tol           = Tol)[0]
-    Baseline = spectres(Wavelength, Wavelength[~Mask], Baseline)
+
+
+    # Again if first or last wavelength was filtered out, there'll be a problem
+    good_Wavelength = Wavelength[~Mask].copy()
+    good_Baseline = Baseline.copy()
+    if good_Wavelength[0] != Wavelength[0]:
+        good_Wavelength = np.array([Wavelength[0]]+good_Wavelength.tolist())
+        good_Baseline = np.array([Flux[0]]+good_Baseline.tolist())
+    if good_Wavelength[-1] != Wavelength[-1]:
+        good_Wavelength = np.array(good_Wavelength.tolist()+Wavelength[-1])
+        good_Baseline = np.array(good_Baseline.tolist()+Flux[-1])
+
+    Baseline = spectres(Wavelength, good_Wavelength, good_Baseline)
+
     return Baseline, Mask
 
 def PureBaseline(Wavelength = [],
