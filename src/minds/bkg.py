@@ -17,6 +17,7 @@ __all__ = [
     "read_file_info2",
     "clean_background_subtraction",
     "detector_background_subtraction",
+    "res_bkg_sub",
 ]
 
 import os
@@ -25,13 +26,14 @@ import warnings
 from os.path import basename, dirname, isfile, join, splitext
 
 import jwst
+from jwst import datamodels
 import numpy as np
 import numpy.ma as ma
 import pandas as pd
 from astropy.io import fits
 from astropy.stats import sigma_clipped_stats
 from packaging import version
-from scipy.optimize import minimize
+from vip_hci.var import mask_circle
 
 vjwst = jwst.__version__
 # print("JWST pipeline version: ", vjwst)
@@ -233,7 +235,7 @@ def clean_background_subtraction(
     Performs a clean background subtraction on dither DETECTOR IMAGES (without
     previous pair-wise subtraction) by:
         i) identifying bad pixels (identical over 4 dithers);
-        ii) removing persistence effects;
+        ii) (optionally) very basic persistence correction;
         iii) estimating the background (minimum over 4 dithers);
         iv) (optionally over several iterations) refining the background
         estimation by replacing significant outliers (that are not bad pixels).
@@ -608,3 +610,87 @@ def detect_outlier_lines(bkg, dq, sig=5):
                 bad_lines[j, x0:xN] = bad_tmp.copy()
 
     return bad_lines, bkg_mspec
+
+
+def res_bkg_sub(fname, fname_x1d, cxy, r_min=4, suffix='_rbgsub', verbose=True,
+                overwrite=True):
+    """Subtract residual background level estimated beyond a certain radius, in\
+    slices of Stage3 spectral cubes.
+
+    Parameters
+    ----------
+    fname: str
+        filename for s3d cube
+    fname_x1d: str
+        filename for corresponding x1d spectrum
+    cxy : tuple of 2 floats
+        xy coordinates of the star centroid
+    r_min: float or int
+        Minimum radius expressed in FWHM beyond which the residual background
+        level is estimated.
+    protect_mask: float or int
+        Radius of protection mask around star, in pixels
+    max_nit: int, opt
+        Maximum number of iterations for the iterative sigma clipping
+    suffix: str, opt
+        Suffix appended to original filename to save bad pixel corrected cube.
+    verbose: bool, opt
+        Whether to print more information during processing.
+    overwrite: bool, opt
+        Whether to overwrite or skip if output file already exists.
+
+    Returns
+    -------
+    None (the output is saved as fits file)
+
+    """
+    outfname = fname[:-5]+'{}.fits'.format(suffix)
+
+    if not isfile(outfname) or overwrite:
+        if verbose:
+            msg = "*** Removing residual background in {} ***"
+            print(msg.format(basename(fname)))
+        # load fits file
+        hdul = fits.open(fname)
+        hdul.verify('ignore')
+        cube = hdul[1].data
+        head = hdul[1].header
+        dq = hdul[3].data
+
+        # Identify non-zero channels (can be present in spec2 s3d cubes]
+        good_idx = np.where(np.nanmean(
+            dq.reshape(dq.shape[0], -1), axis=1) != 513)[0]
+        if verbose:
+            msg = "There are {:.0f} good channels ".format(len(good_idx))
+            msg += "in {}".format(fname)
+        good_cube = cube[good_idx].copy()
+        cube_corr = cube.copy()
+        dq_corr = np.zeros_like(cube_corr)
+        ori_mask = np.zeros_like(cube_corr)
+        ori_mask[np.where(dq_corr == 0)] = 1
+        ori_mask_nan = np.ones_like(cube_corr)*np.nan
+        ori_mask_nan[np.where(dq_corr == 0)] = 1
+
+        # Calculate FWHM
+        pxscale1 = float(head['CDELT1'])
+        pxscale2 = float(head['CDELT2'])
+        plsc = float(np.mean([pxscale1, pxscale2])*3600)
+
+        # load wavelengths and define FWHM
+        dm = datamodels.open(fname_x1d)
+        wl = np.array(dm.spec[0].spec_table['WAVELENGTH'])
+        fwhm = wl/plsc*0.31/8  # equivalent to ~1.22 lambda/D
+
+        # mask inner region
+        full_mask = ori_mask_nan.copy()
+        rbgsub = np.zeros_like(fwhm)
+        for z, ch in enumerate(good_idx):
+            full_mask[ch] = mask_circle(full_mask[ch], r_min*fwhm[ch],
+                                        cy=cxy[1], cx=cxy[0], fillwith=np.nan)
+            rbgsub[ch] = np.nanmedian(cube[ch]*full_mask[ch])
+            cube_corr[ch] = good_cube[z]-float(rbgsub[ch])
+
+        # update HDU and write fits
+        hdul[1].data = cube_corr.copy()
+        hdul.writeto(fname.replace('.fits', suffix+'.fits'), overwrite=True)
+        hdul.close()
