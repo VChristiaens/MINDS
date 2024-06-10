@@ -104,6 +104,6 @@ As well as some of the following publications:
 - `Bushouse et al. (2023)<https://ui.adsabs.harvard.edu/abs/2023zndo...7795697B/abstract>`_ for the jwst pipeline (or similar reference, depending on the exact jwst pipeline version you use);
 - `Gomez Gonzalez et al. (2017) <https://ui.adsabs.harvard.edu/abs/2017AJ....154....7G/abstract>`_ and `Christiaens et al. (2023) <https://ui.adsabs.harvard.edu/abs/2023JOSS....8.4774C/abstract>`_ for VIP routines used in the pipeline;
 - `Gasman et al. (2023)<https://ui.adsabs.harvard.edu/abs/2023A%26A...673A.102G/abstract>`_ if you set the option psff=True (i.e. point-source specific reference files);
-- `Temmink et al. (2024)<https://ui.adsabs.harvard.edu/abs/2024arXiv240313591T/abstract>`_ for continuum subtraction.
+- `Temmink et al. (2024)<https://ui.adsabs.harvard.edu/abs/2024A%26A...686A.117T/abstract>`_ for continuum subtraction.
 
 We sincerely thank David Law and Patrick Kavanagh, whose notebook and script shared with us allowed us to kickstart this projet. We also thank Yannis Argyriou for very useful feedback throughout the development of this hybrid pipeline.
