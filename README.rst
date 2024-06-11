@@ -87,9 +87,9 @@ Detailed instructions are provided in the Guidelines pdf.
 Publications that made use of the MINDS pipeline:
 -------------------------------------------------
 
-- `Perotti et al. (2023)<https://ui.adsabs.harvard.edu/abs/2023Natur.620..516P/abstract>`_
-- `Schwarz et al. (2024)<https://ui.adsabs.harvard.edu/abs/2024ApJ...962....8S/abstract>`_
-- `Temmink et al. (2024)<https://ui.adsabs.harvard.edu/abs/2024arXiv240313591T/abstract>`_
+- `Perotti et al. (2023) <https://ui.adsabs.harvard.edu/abs/2023Natur.620..516P/abstract>`_
+- `Schwarz et al. (2024) <https://ui.adsabs.harvard.edu/abs/2024ApJ...962....8S/abstract>`_
+- `Temmink et al. (2024) <https://ui.adsabs.harvard.edu/abs/2024arXiv240313591T/abstract>`_
 
 
 Attribution
@@ -97,13 +97,13 @@ Attribution
 
 If the pipeline is useful to your science, we kindly ask you to cite:
 
-`Christiaens, Samland, Gasman, Temmink & Perotti (2024), Astrophysics Source CodeLibrary, ascl:2403.007<https://ui.adsabs.harvard.edu/abs/2024ascl.soft03007C/abstract>`_
+`Christiaens, Samland, Gasman, Temmink & Perotti (2024), Astrophysics Source CodeLibrary, ascl:2403.007 <https://ui.adsabs.harvard.edu/abs/2024ascl.soft03007C/abstract>`_
 
 As well as some of the following publications:
 
-- `Bushouse et al. (2023)<https://ui.adsabs.harvard.edu/abs/2023zndo...7795697B/abstract>`_ for the jwst pipeline (or similar reference, depending on the exact jwst pipeline version you use);
+- `Bushouse et al. (2023) <https://ui.adsabs.harvard.edu/abs/2023zndo...7795697B/abstract>`_ for the jwst pipeline (or similar reference, depending on the exact jwst pipeline version you use);
 - `Gomez Gonzalez et al. (2017) <https://ui.adsabs.harvard.edu/abs/2017AJ....154....7G/abstract>`_ and `Christiaens et al. (2023) <https://ui.adsabs.harvard.edu/abs/2023JOSS....8.4774C/abstract>`_ for VIP routines used in the pipeline;
-- `Gasman et al. (2023)<https://ui.adsabs.harvard.edu/abs/2023A%26A...673A.102G/abstract>`_ if you set the option psff=True (i.e. point-source specific reference files);
-- `Temmink et al. (2024)<https://ui.adsabs.harvard.edu/abs/2024A%26A...686A.117T/abstract>`_ for continuum subtraction.
+- `Gasman et al. (2023) <https://ui.adsabs.harvard.edu/abs/2023A%26A...673A.102G/abstract>`_ if you set the option psff=True (i.e. point-source specific reference files);
+- `Temmink et al. (2024) <https://ui.adsabs.harvard.edu/abs/2024A%26A...686A.117T/abstract>`_ for continuum subtraction.
 
 We sincerely thank David Law and Patrick Kavanagh, whose notebook and script shared with us allowed us to kickstart this projet. We also thank Yannis Argyriou for very useful feedback throughout the development of this hybrid pipeline.
