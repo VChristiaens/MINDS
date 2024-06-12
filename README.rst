@@ -62,16 +62,38 @@ Then, to activate it (assuming you named it as above):
 The pipeline depends on two major packages: ``jwst`` and ``vip_hci``, which both come
 with their own set of dependencies from the Python ecosystem, such as
 ``numpy``, ``scipy``, ``matplotlib``, ``pandas``, ``astropy``, ``scikit-learn``,
-``scikit-image``, ``photutils`` and others. The most convenient way to install 
-all required dependencies is simply, once in the environment:
+``scikit-image``, ``photutils`` and others. There are 2 ways to get it all install at once.
+
+1. The most convenient way is simply to run, once in the environment:
 
 .. code-block:: bash
 
   pip install git+https://github.com/VChristiaens/MINDS.git
 
-In most cases, you should not select the option to use point-source specific reference files (see flow charts).
+If later on, you want to upgrade to the latest MINDS pipeline version, it would be a matter of:
+
+.. code-block:: bash
+
+  pip install git+https://github.com/VChristiaens/MINDS.git --upgrade
+
+2. Alternatively, if you also want the documentation, flow charts and example notebooks, clone the repository first and pip install locally:
+
+.. code-block:: bash
+
+  # cd where you want your local repository to be located
+  git clone https://github.com/VChristiaens/MINDS.git
+  # cd in your local repository
+  pip install -e .
+
+In the latter case, you can benefit from the latest changes made to the repository any time, with:
+
+.. code-block:: bash
+
+  git pull
+
+In most cases, you should *not* select the option to use point-source specific reference files, as these are not up-to-date regarding temporal evolution of the photometric calibration (see flow charts).
 However, if you do, you will first have to download them here: https://dox.uliege.be/index.php/s/h4MM95IqFt8Gvce
-Place the psff_ref folder in the same directory as the Jupyter notebook. 
+Place the psff_ref folder in the same directory as the Jupyter notebook.
 
 
 Usage
