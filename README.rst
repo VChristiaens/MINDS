@@ -62,7 +62,7 @@ Then, to activate it (assuming you named it as above):
 The pipeline depends on two major packages: ``jwst`` and ``vip_hci``, which both come
 with their own set of dependencies from the Python ecosystem, such as
 ``numpy``, ``scipy``, ``matplotlib``, ``pandas``, ``astropy``, ``scikit-learn``,
-``scikit-image``, ``photutils`` and others. There are 2 ways to get it all install at once.
+``scikit-image``, ``photutils`` and others. There are 2 ways to get it all installed at once.
 
 1. The most convenient way is simply to run, once in the environment:
 
