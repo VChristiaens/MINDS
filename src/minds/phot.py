@@ -309,15 +309,13 @@ def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
             print(f"number of bad center positions: {np.sum(maskl)}")
         median_values = fit_results.median()
 
-        fit_results.iloc[maskl, 0] = median_values[0]
-        fit_results.iloc[maskl, 1] = median_values[1]
-        if method == 'cc':
-            fit_results.iloc[maskl, 2] = 0
-        else:
-            fit_results.iloc[maskl, 2] = median_values[2]
-            fit_results.iloc[maskl, 3] = median_values[3]
-            fit_results.iloc[maskl, 4] = median_values[4]
-            fit_results.iloc[maskl, 4] = 0
+        fit_results['x'].iloc[maskl] = median_values[0]
+        fit_results['y'].iloc[maskl] = median_values[1]
+        if method == 'cc' or method == 'gauss':
+            fit_results['fwhm_x'].iloc[maskl] = median_values[2]
+            fit_results['fwhm_y'].iloc[maskl] = median_values[3]
+            fit_results['theta'].iloc[maskl] = median_values[4]
+            fit_results['flags'].iloc[maskl] = 0
 
         fit_results.to_csv(bname+'_2d_fit_robust.csv', index=False)
 
