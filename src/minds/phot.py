@@ -62,7 +62,7 @@ from vip_hci.var import cube_filter_lowpass, frame_center, get_square, mask_circ
 
 def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
                    imlib='ndimage-interp', crop_sz=9, verbose=True,
-                   debug=False,  overwrite=False):
+                   debug=False,  overwrite=False, full_output=False):
     """
     Make cube square and place star centroid on central pixel. Uses the
     following procedure:
@@ -105,10 +105,22 @@ def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
         Whether to show intermediate diagnostic plots, useful for debugging.
     overwrite : bool
         If True, overwrites output files.
+    full_output: bool
+        If True,
 
     Returns
     -------
-    None (the outputs are written as fits files)
+    [full_output=False]
+    cx_med, cy_med : floats
+        x and y coordinates of the median centroid found for the star. In case,
+        the method is set to 'cc' or 'gauss' the cube images are shifted such
+        that the centroid falls on these coordinates in the saved cube.
+    [full_output=True]
+    cx_med, cy_med, cx_all, cy_all : float, float, 1d ndarray, 1d ndarray
+        In addition to cx_med and cy_med, two 1d numpy ndarrays are returned
+        corresponding to the centroid location found for the star in each frame
+        of the cube in the case of 'cc' or 'gauss' centering methods. If the
+        method is set to None, cx_all and cy_all will be None.
 
     """
 
@@ -284,6 +296,8 @@ def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
         err_cen = err
         dq_cen = dqs
         wm_cen = wm
+        cx_all = None
+        cy_all = None
     else:
         x_arr = sigma_clip(fit_results['x'].values, sigma=sig, cenfunc=np.nanmedian,
                            stdfunc=np.nanstd)
@@ -367,6 +381,10 @@ def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
     if verbose:
         msg = "Centroid median xy pixel coordinates for {}: ({:.0f},{:.0f})"
         print(msg.format(basename(splitext(filename)[0]), cx_med, cy_med))
+
+    if full_output:
+        return cx_med, cy_med, cx_all, cy_all
+
     return cx_med, cy_med
 
 
