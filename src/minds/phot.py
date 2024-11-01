@@ -235,7 +235,7 @@ def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
             write_fits(bname + '_smooth_for_cen.fits', cube_pos)
 
         # subtract minimum in cropped image + find max near center.
-        med_img_crop = frame_crop(med_img, crop_sz, cenxy=(cx_tmp, cy_tmp))
+        med_img_crop = frame_crop(med_img, crop_sz, (cx_tmp, cy_tmp))
         Imin = max(np.amin(med_img_crop), 0)
         cy_c, cx_c = np.unravel_index(np.argmax(med_img_crop),
                                       med_img_crop.shape)
