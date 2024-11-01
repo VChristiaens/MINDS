@@ -311,7 +311,9 @@ def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
 
         fit_results['x'].iloc[maskl] = median_values[0]
         fit_results['y'].iloc[maskl] = median_values[1]
-        if method == 'cc' or method == 'gauss':
+        if method == 'cc':
+            fit_results['flags'].iloc[maskl] = 0
+        if method == 'gauss':
             fit_results['fwhm_x'].iloc[maskl] = median_values[2]
             fit_results['fwhm_y'].iloc[maskl] = median_values[3]
             fit_results['theta'].iloc[maskl] = median_values[4]
