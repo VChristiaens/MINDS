@@ -62,7 +62,8 @@ from vip_hci.var import cube_filter_lowpass, frame_center, get_square, mask_circ
 
 def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
                    imlib='ndimage-interp', crop_sz=9, verbose=True,
-                   debug=False,  overwrite=False, full_output=False):
+                   debug=False, overwrite=False, full_output=False,
+                   smooth=True):
     """
     Make cube square and place star centroid on central pixel. Uses the
     following procedure:
@@ -195,84 +196,76 @@ def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
     fwhm_xyt = np.zeros([nz, 3])
     flags = np.ones([nz, 1])
 
+    if method == 'cc':
+        res = cube_recenter_dft_upsampling(cube_conv, negative=False, fwhm=2,
+                                           subi_size=None, upsample_factor=100,
+                                           imlib='opencv', interpolation='lanczos4',
+                                           mask=None, border_mode='reflect',
+                                           full_output=True, verbose=verbose,
+                                           nproc=1, save_shifts=False,
+                                           debug=debug, plot=debug)
+        cube_conv, final_cxy[:, 1], final_cxy[:, 0] = res
+        final_cxy[:, 1] *= -1
+        final_cxy[:, 0] *= -1
+        fit_results = np.hstack([final_cxy, flags])
+        fit_results = pd.DataFrame(fit_results, columns=['x', 'y', 'flags'])
+
+    # in case of 'ddither' background subtraction, a lot of negatives can be present
+    # safer to avoid them for the Gaussian fit
+    cube_pos = cube_conv.copy()
+    cube_pos[np.where(cube_pos < 0)] = np.nan
+    # set NaN values to zero - NEW v6d
+    # cube_pos[np.where(np.isnan(cube_pos))] = 0
+    spec_proxy = np.zeros(nz)
+    for z in range(nz):
+        # interpolate the NaN values
+        cube_pos[z] = interp_nan(cube_pos[z],
+                                 Gaussian2DKernel(x_stddev=1, y_stddev=1),
+                                 convolve=convolve_fft)
+        mask_in = mask_circle(cube_pos[z], 6, mode='out', cy=cy_tmp,
+                              cx=cx_tmp) * mask[z]
+        mask_out = mask_circle(cube_pos[z], 6, mode='in', cy=cy_tmp,
+                               cx=cx_tmp) * mask[z]
+        mean_out = np.nanmean(mask_out[np.where(mask_out > 0)])
+        std_out = np.nanstd(mask_out[np.where(mask_out > 0)])
+        spec_proxy[z] = np.nansum(mask_in)/(mean_out+std_out)
+        # spec_proxy[z] = np.abs(np.sum(mask_cube[z]))
+    #cube_conv = cube_filter_lowpass(cube_pos, fwhm_size=2)
+    # discard frames that are full of NaNs (can happen with latest JWST pipeline version)
+    # 2d_arr = np.reshape(cube_conv, (cube_conv.shape[0], -1))
+    # nnans = np.nansum(2d_arr, axis=1)
+    good_idx = ~bad_idx
+    cube_pos = cube_pos[good_idx]
+    spec_proxy = spec_proxy[good_idx]
+    spec_proxy[np.where(~np.isfinite(spec_proxy))] = 0
+
+    med_img = cube_collapse(cube_pos, mode='wmean',
+                            w=spec_proxy)  # np.median(cube, axis=0)
+    # save and double check what the algo sees
+    if debug:
+        cube_pos = np.append(cube_pos, med_img[np.newaxis, :, :], axis=0)
+        write_fits(bname + '_smooth_for_cen.fits', cube_pos)
+
+    # subtract minimum in cropped image + find max near center.
+    med_img_crop = frame_crop(med_img, crop_sz, (cx_tmp, cy_tmp))
+    Imin = max(np.nanmin(med_img_crop), 0)
+    cy_c, cx_c = np.unravel_index(np.argmax(med_img_crop),
+                                  med_img_crop.shape)
+    cy_c += (med_img.shape[-2]-crop_sz)//2
+    cx_c += (med_img.shape[-1]-crop_sz)//2
+
+    res_fit = fit_2dgaussian_bpm(med_img-Imin,  # mask_circle(med_img, 10, mode='out', # cy=cy_tmp, cx=cx_tmp),
+                                 cent=(cx_c, cy_c), crop=True,
+                                 cropsize=crop_sz, full_output=True,
+                                 debug=debug)
+    cy_med = float(res_fit['centroid_y'])
+    cx_med = float(res_fit['centroid_x'])
+
     if method != 'gauss':
-        if method == 'cc':
-            res = cube_recenter_dft_upsampling(cube_conv, negative=False, fwhm=2,
-                                               subi_size=None, upsample_factor=100,
-                                               imlib='opencv', interpolation='lanczos4',
-                                               mask=None, border_mode='reflect',
-                                               full_output=True, verbose=verbose,
-                                               nproc=1, save_shifts=False,
-                                               debug=debug, plot=debug)
-            cube_conv, final_cxy[:, 1], final_cxy[:, 0] = res
-            final_cxy[:, 1] *= -1
-            final_cxy[:, 0] *= -1
-            fit_results = np.hstack([final_cxy, flags])
-            fit_results = pd.DataFrame(fit_results, columns=['x', 'y', 'flags'])
-
-        # in case of 'ddither' background subtraction, a lot of negatives can be present
-        # safer to avoid them for the Gaussian fit
-        cube_pos = cube_conv.copy()
-        cube_pos[np.where(cube_pos < 0)] = np.nan
-        # set NaN values to zero - NEW v6d
-        # cube_pos[np.where(np.isnan(cube_pos))] = 0
-        spec_proxy = np.zeros(nz)
-        for z in range(nz):
-            # interpolate the NaN values
-            cube_pos[z] = interp_nan(cube_pos[z],
-                                     Gaussian2DKernel(x_stddev=1, y_stddev=1),
-                                     convolve=convolve_fft)
-            mask_in = mask_circle(cube_pos[z], 6, mode='out', cy=cy_tmp,
-                                  cx=cx_tmp) * mask[z]
-            mask_out = mask_circle(cube_pos[z], 6, mode='in', cy=cy_tmp,
-                                   cx=cx_tmp) * mask[z]
-            mean_out = np.nanmean(mask_out[np.where(mask_out > 0)])
-            std_out = np.nanstd(mask_out[np.where(mask_out > 0)])
-            spec_proxy[z] = np.nansum(mask_in)/(mean_out+std_out)
-            # spec_proxy[z] = np.abs(np.sum(mask_cube[z]))
-        #cube_conv = cube_filter_lowpass(cube_pos, fwhm_size=2)
-        # discard frames that are full of NaNs (can happen with latest JWST pipeline version)
-        # 2d_arr = np.reshape(cube_conv, (cube_conv.shape[0], -1))
-        # nnans = np.nansum(2d_arr, axis=1)
-        good_idx = ~bad_idx
-        cube_pos = cube_pos[good_idx]
-        spec_proxy = spec_proxy[good_idx]
-        spec_proxy[np.where(~np.isfinite(spec_proxy))] = 0
-
-        med_img = cube_collapse(cube_pos, mode='wmean',
-                                w=spec_proxy)  # np.median(cube, axis=0)
-        # save and double check what the algo sees
-        if debug:
-            cube_pos = np.append(cube_pos, med_img[np.newaxis, :, :], axis=0)
-            write_fits(bname + '_smooth_for_cen.fits', cube_pos)
-
-        # subtract minimum in cropped image + find max near center.
-        med_img_crop = frame_crop(med_img, crop_sz, (cx_tmp, cy_tmp))
-        Imin = max(np.amin(med_img_crop), 0)
-        cy_c, cx_c = np.unravel_index(np.argmax(med_img_crop),
-                                      med_img_crop.shape)
-        cy_c += (med_img.shape[-2]-crop_sz)//2
-        cx_c += (med_img.shape[-1]-crop_sz)//2
-
-        res_fit = fit_2dgaussian_bpm(med_img-Imin,  # mask_circle(med_img, 10, mode='out', # cy=cy_tmp, cx=cx_tmp),
-                                     cent=(cx_c, cy_c), crop=True,
-                                     cropsize=crop_sz, full_output=True,
-                                     debug=debug)
-        cy_med = float(res_fit['centroid_y'])
-        cx_med = float(res_fit['centroid_x'])
         final_cxy[:, 1] += cy_med
         final_cxy[:, 0] += cx_med
     else:
-        mask_cube = mask_circle(cube, 10, mode='out') * mask
-        spec_proxy = np.zeros(nz)
-        for z in range(nz):
-            spec_proxy[z] = np.abs(np.sum(mask_cube[z]))
-        # np.median(cube, axis=0)
-        med_img = cube_collapse(cube, mode='wmean', w=spec_proxy)
-        res_fit = fit_2dgaussian_bpm(med_img, cent=(cx_tmp, cy_tmp), crop=False,
-                                     full_output=True, debug=debug)
-        cy_med = float(res_fit['centroid_y'])
-        cx_med = float(res_fit['centroid_x'])
+        # do a 2D Gaussian fit channel per channel
         for z in tqdm(range(nz)):
             debug_tmp = (z == 0) & debug
             dict_res = fit_2dgaussian_bpm(cube_conv[z], crop=True,
@@ -299,10 +292,10 @@ def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
         cx_all = None
         cy_all = None
     else:
-        x_arr = sigma_clip(fit_results['x'].values, sigma=sig, cenfunc=np.nanmedian,
-                           stdfunc=np.nanstd)
-        y_arr = sigma_clip(fit_results['y'].values, sigma=sig, cenfunc=np.nanmedian,
-                           stdfunc=np.nanstd)
+        x_arr = sigma_clip(fit_results['x'].values, sigma=sig,
+                           cenfunc=np.nanmedian, stdfunc=np.nanstd)
+        y_arr = sigma_clip(fit_results['y'].values, sigma=sig,
+                           cenfunc=np.nanmedian, stdfunc=np.nanstd)
         maskl = np.logical_or(x_arr.mask, y_arr.mask)
 
         if verbose:
@@ -350,7 +343,7 @@ def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
 
         # The FFT-method can leave Gibbs artefacts which show up as high=spatial frequency
         # Smoothing with a fine Gaussian kernel deals with it while preserving flux.
-        if imlib == 'vip-fft':
+        if smooth:
             cube_cen = cube_filter_lowpass(cube_cen, fwhm_size=1.5)
             err_cen = cube_filter_lowpass(err_cen, fwhm_size=1.5)
             wm_cen = cube_filter_lowpass(wm_cen, fwhm_size=1.5)
