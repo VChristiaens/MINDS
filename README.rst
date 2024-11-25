@@ -37,16 +37,10 @@ Then launch and run the MINDS_reduction.ipynb notebook, after adapting the input
 
 Installation and dependencies
 -----------------------------
-The benefits of using a Python package manager (distribution), such as
-(ana)conda, are many. Mainly, it brings easy and robust package
-management and avoids messing up with your system's default python. 
-We recommend using
-`Miniconda <https://conda.io/miniconda>`_.
+The benefits of using a Python package manager (distribution), such as (ana)conda, are many. Mainly, it brings easy and robust package management and avoids messing up with your system's default python.
+We recommend using `Miniconda <https://conda.io/miniconda>`_.
 
-Before installing the package, it is **highly recommended to create a dedicated
-conda environment** to not mess up with the package versions in your base
-environment. This can be done easily with (replace ``minds_env `` by the name you want
-for your environment):
+Before installing the package, it is **highly recommended to create a dedicated conda environment** to not mess up with the package versions in your base environment. This can be done easily with (replace ``minds_env`` by the name you want for your environment):
 
 .. code-block:: bash
 
@@ -59,10 +53,7 @@ Then, to activate it (assuming you named it as above):
   conda activate minds_env
 
 
-The pipeline depends on two major packages: ``jwst`` and ``vip_hci``, which both come
-with their own set of dependencies from the Python ecosystem, such as
-``numpy``, ``scipy``, ``matplotlib``, ``pandas``, ``astropy``, ``scikit-learn``,
-``scikit-image``, ``photutils`` and others. There are 2 ways to get it all installed at once.
+The pipeline depends on two major packages: ``jwst`` and ``vip_hci``, which both come with their own set of dependencies from the Python ecosystem, such as ``numpy``, ``scipy``, ``matplotlib``, ``pandas``, ``astropy``, ``scikit-learn``, ``scikit-image``, ``photutils`` and others. There are 2 ways to get it all installed at once.
 
 1. The most convenient way is simply to run, once in the environment:
 
@@ -91,8 +82,7 @@ In the latter case, you can benefit from the latest changes made to the reposito
 
   git pull
 
-In most cases, you should *not* select the option to use point-source specific reference files, as these are not up-to-date regarding temporal evolution of the photometric calibration (see flow charts).
-However, if you do, you will first have to download them here: https://dox.uliege.be/index.php/s/h4MM95IqFt8Gvce
+In most cases, you should *not* select the option to use point-source specific reference files, as these are not up-to-date regarding temporal evolution of the photometric calibration (see flow charts). However, if you do, you will first have to download them here: https://dox.uliege.be/index.php/s/h4MM95IqFt8Gvce
 Place the psff_ref folder in the same directory as the Jupyter notebook.
 
 
@@ -119,7 +109,7 @@ Attribution
 
 If the pipeline is useful to your science, we kindly ask you to cite:
 
-`Christiaens, Samland, Gasman, Temmink & Perotti (2024), Astrophysics Source CodeLibrary, ascl:2403.007 <https://ui.adsabs.harvard.edu/abs/2024ascl.soft03007C/abstract>`_
+`Christiaens, Samland, Gasman, Temmink & Perotti (2024), Astrophysics Source Code Library, ascl:2403.007 <https://ui.adsabs.harvard.edu/abs/2024ascl.soft03007C/abstract>`_
 
 As well as some of the following publications:
 
