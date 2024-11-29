@@ -17,7 +17,7 @@ requires-python = ">=3.10"
 dependencies = [
     "vip_hci>1.4.0",
     "opencv-python",
-    "jwst@git+https://github.com/spacetelescope/jwst@master",
+    "jwst",
     "spectres",
     "pybaselines",
     "scipy<1.10",

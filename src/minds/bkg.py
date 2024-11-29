@@ -33,6 +33,7 @@ import pandas as pd
 from astropy.io import fits
 from astropy.stats import sigma_clipped_stats
 from packaging import version
+from scipy.signal import savgol_filter
 from vip_hci.var import mask_circle
 
 vjwst = jwst.__version__
@@ -612,8 +613,8 @@ def detect_outlier_lines(bkg, dq, sig=5):
     return bad_lines, bkg_mspec
 
 
-def res_bkg_sub(fname, fname_x1d, cxy, r_min=4, suffix='_rbgsub', verbose=True,
-                overwrite=True):
+def res_bkg_sub(fname, fname_x1d, cxy, r_min=4, smooth_bkg=True,
+                suffix='_rbgsub', verbose=True, overwrite=True):
     """Subtract residual background level estimated beyond a certain radius, in\
     slices of Stage3 spectral cubes.
 
@@ -628,10 +629,9 @@ def res_bkg_sub(fname, fname_x1d, cxy, r_min=4, suffix='_rbgsub', verbose=True,
     r_min: float or int
         Minimum radius expressed in FWHM beyond which the residual background
         level is estimated.
-    protect_mask: float or int
-        Radius of protection mask around star, in pixels
-    max_nit: int, opt
-        Maximum number of iterations for the iterative sigma clipping
+    smooth_bkg: bool, opt
+        Whether to subtract a smooth (Savitzky-Golay filter) background level
+        estimated over the full band, instead of the individual BKG levels.
     suffix: str, opt
         Suffix appended to original filename to save bad pixel corrected cube.
     verbose: bool, opt
@@ -641,7 +641,12 @@ def res_bkg_sub(fname, fname_x1d, cxy, r_min=4, suffix='_rbgsub', verbose=True,
 
     Returns
     -------
-    None (the output is saved as fits file)
+    rbgsub_smooth: numpy 2d ndarray
+        Estimated background level and corresponding wavelengths. The shape of
+        the array is either [n_channels, 2] or [n_channels, 3] depending on
+        whether smooth_bkg is False or True, respectively. [:, 0] contains the
+        wavelengths, [:, 1] contains the non-smoothed estimated background, and
+        [:, 2] contains the smooth backround estimate, if requested.
 
     """
     outfname = fname[:-5]+'{}.fits'.format(suffix)
@@ -678,19 +683,55 @@ def res_bkg_sub(fname, fname_x1d, cxy, r_min=4, suffix='_rbgsub', verbose=True,
 
         # load wavelengths and define FWHM
         dm = datamodels.open(fname_x1d)
-        wl = np.array(dm.spec[0].spec_table['WAVELENGTH'])
+        try:
+            wl = np.array(dm.spec[0].spec_table['WAVELENGTH'])
+        except:
+            hdu = fits.open(fname_x1d)
+            wl = hdu[1].data['WAVELENGTH']
         fwhm = wl/plsc*0.31/8  # equivalent to ~1.22 lambda/D
 
         # mask inner region
         full_mask = ori_mask_nan.copy()
         rbgsub = np.zeros_like(fwhm)
+        nbads = 0
+        ch_ini = 0
+        ch_fin = len(rbgsub)
         for z, ch in enumerate(good_idx):
             full_mask[ch] = mask_circle(full_mask[ch], r_min*fwhm[ch],
                                         cy=cxy[1], cx=cxy[0], fillwith=np.nan)
             rbgsub[ch] = np.nanmedian(cube[ch]*full_mask[ch])
-            cube_corr[ch] = good_cube[z]-float(rbgsub[ch])
+            if rbgsub[ch] == 0:
+                nbads += 1
+            else:
+                if ch == nbads:
+                    ch_ini = ch
+                elif ch > ch_ini:
+                    ch_fin = ch+1
+
+        if smooth_bkg:
+            rbgsub_smooth = np.zeros_like(rbgsub)
+            win_len = 51
+            if ch_fin - ch_ini <= win_len:
+                win_len = (ch_fin - ch_ini)//2
+            if verbose:
+                print("Smoothing background estimates using a Sav-Gol filter ")
+                print("of window {} from ch. {} to {}".format(win_len, ch_ini,
+                                                              ch_fin))
+            rbgsub_smooth[ch_ini:ch_fin] = savgol_filter(rbgsub[ch_ini:ch_fin],
+                                                         window_length=win_len,
+                                                         polyorder=1)
+        else:
+            rbgsub_smooth = rbgsub
+
+        for z, ch in enumerate(good_idx):
+            cube_corr[ch] = good_cube[z]-float(rbgsub_smooth[ch])
 
         # update HDU and write fits
         hdul[1].data = cube_corr.copy()
         hdul.writeto(fname.replace('.fits', suffix+'.fits'), overwrite=True)
         hdul.close()
+
+    if smooth_bkg:
+        return wl, rbgsub, rbgsub_smooth
+    else:
+        return wl, rbgsub

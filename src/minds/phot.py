@@ -134,8 +134,8 @@ def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
         return None
 
     # load data
-    cube = fits.getdata(filename, 'SCI')
-    err = fits.getdata(filename, 'ERR')
+    cube_ori = fits.getdata(filename, 'SCI')
+    err_ori = fits.getdata(filename, 'ERR')
     dqs = fits.getdata(filename, 'DQ')
     wm = fits.getdata(filename, 'WMAP')
     mask = np.zeros_like(dqs)
@@ -148,12 +148,8 @@ def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
             dq.astype(int), DO_NOT_USE) == DO_NOT_USE)
     bad_mask = np.array(bad_mask)
 
-    # Find frames full of NaNs
-    bad_idx = np.all(~np.isfinite(cube.reshape(cube.shape[0], -1)),
-                     axis=1)
-
     # pad to squares
-    nz, ny, nx = cube.shape
+    nz, ny, nx = cube_ori.shape
     dxy0 = int(np.floor(((nx-ny))/2))
     dxy1 = int(np.ceil((nx-ny)/2))
     pad_x0 = max(int(-dxy0), 0)
@@ -161,63 +157,94 @@ def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
     pad_y0 = max(int(dxy0), 0)
     pad_y1 = max(int(dxy1), 0)
     if nx != ny:
-        cube = np.pad(cube, ((0, 0), (pad_y0, pad_y1), (pad_x0, pad_x1)))
-        err = np.pad(err, ((0, 0), (pad_y0, pad_y1), (pad_x0, pad_x1)))
-        mask = np.pad(mask, ((0, 0), (pad_y0, pad_y1), (pad_x0, pad_x1)))
+        if method is None:
+            pad_val = np.nan
+        else:
+            pad_val = 0
+        cube = np.pad(cube_ori, ((0, 0), (pad_y0, pad_y1), (pad_x0, pad_x1)),
+                      constant_values=pad_val)
+        err = np.pad(err_ori, ((0, 0), (pad_y0, pad_y1), (pad_x0, pad_x1)),
+                     constant_values=pad_val)
+        mask = np.pad(mask, ((0, 0), (pad_y0, pad_y1), (pad_x0, pad_x1)),
+                      constant_values=0)
         dqs = np.pad(dqs, ((0, 0), (pad_y0, pad_y1),
                      (pad_x0, pad_x1)), constant_values=513)
-        wm = np.pad(wm, ((0, 0), (pad_y0, pad_y1), (pad_x0, pad_x1)))
+        wm = np.pad(wm, ((0, 0), (pad_y0, pad_y1), (pad_x0, pad_x1)),
+                    constant_values=0)
+    else:
+        cube = cube_ori
+        err = err_ori
+
+    # Find frames full of NaNs
+    bad_idx = np.all(~np.isfinite(cube.reshape(cube.shape[0], -1)),
+                     axis=1)
+    # Also find frames full of Zeros
+    bad_idx2 = np.all(cube.reshape(cube.shape[0], -1) == 0,
+                      axis=1)
+    # Also find frames filled with Zeros and NaNs
+    bad_idx3 = np.nanmax(cube.reshape(cube.shape[0], -1), axis=1) <= 0
+    good_idx = ~(bad_idx | bad_idx2 | bad_idx3)
+    good_cube = cube[good_idx].copy()
+    good_err = err[good_idx].copy()
+    good_wm = wm[good_idx].copy()
+    nz_good = good_cube.shape[0]
 
     # NaN the zeros
-    cube[np.where(cube == 0)] = np.nan
-    err[np.where(err == 0)] = np.nan
-    wm[np.where(wm == 0)] = np.nan
+    good_cube[np.where(good_cube == 0)] = np.nan
+    good_err[np.where(good_err == 0)] = np.nan
+    good_wm[np.where(good_wm == 0)] = np.nan
     # Interpolate the NaNs
-    for z in range(nz):
-        cube[z] = interp_nan(cube[z], Gaussian2DKernel(x_stddev=1, y_stddev=1),
-                             convolve=convolve_fft)
-        err[z] = interp_nan(err[z], Gaussian2DKernel(x_stddev=1, y_stddev=1),
-                            convolve=convolve_fft)
-        wm[z] = interp_nan(wm[z], Gaussian2DKernel(x_stddev=1, y_stddev=1),
-                           convolve=convolve_fft)
+    for z in range(nz_good):
+        good_cube[z] = interp_nan(good_cube[z],
+                                  Gaussian2DKernel(x_stddev=1, y_stddev=1),
+                                  convolve=convolve_fft)
+        good_err[z] = interp_nan(good_err[z],
+                                 Gaussian2DKernel(x_stddev=1, y_stddev=1),
+                                 convolve=convolve_fft)
+        good_wm[z] = interp_nan(good_wm[z],
+                                Gaussian2DKernel(x_stddev=1, y_stddev=1),
+                                convolve=convolve_fft)
+
     # Zero back the residual NaNs
-    cube[np.where(np.isnan(cube))] = 0
-    err[np.where(np.isnan(err))] = 0
-    wm[np.where(np.isnan(wm))] = 0
+    good_cube[np.where(np.isnan(good_cube))] = 0
+    good_err[np.where(np.isnan(good_err))] = 0
+    good_wm[np.where(np.isnan(good_wm))] = 0
 
     # fit_2dgaussian on collapsed image
     # compute weights for a weighted mean
     # cy_tmp, cx_tmp = frame_center(cube[0])
 
-    cube_conv = cube_filter_lowpass(cube, fwhm_size=2)
+    cube_conv = cube_filter_lowpass(good_cube, fwhm_size=2)
     cy_tmp, cx_tmp = frame_center(cube_conv)
 
     final_cxy = np.zeros([nz, 2])
     fwhm_xyt = np.zeros([nz, 3])
-    flags = np.ones([nz, 1])
+    flags = np.zeros([nz, 1])
+    flags[good_idx, 0] = 1
 
     if method == 'cc':
         res = cube_recenter_dft_upsampling(cube_conv, negative=False, fwhm=2,
                                            subi_size=None, upsample_factor=100,
-                                           imlib='opencv', interpolation='lanczos4',
-                                           mask=None, border_mode='reflect',
+                                           imlib='opencv',
+                                           interpolation='lanczos4', mask=None,
+                                           border_mode='reflect',
                                            full_output=True, verbose=verbose,
                                            nproc=1, save_shifts=False,
                                            debug=debug, plot=debug)
-        cube_conv, final_cxy[:, 1], final_cxy[:, 0] = res
-        final_cxy[:, 1] *= -1
-        final_cxy[:, 0] *= -1
+        cube_conv, final_cxy[good_idx, 1], final_cxy[good_idx, 0] = res
+        final_cxy[good_idx, 1] *= -1
+        final_cxy[good_idx, 0] *= -1
         fit_results = np.hstack([final_cxy, flags])
         fit_results = pd.DataFrame(fit_results, columns=['x', 'y', 'flags'])
 
-    # in case of 'ddither' background subtraction, a lot of negatives can be present
-    # safer to avoid them for the Gaussian fit
+    # in case of 'ddither' background subtraction, a lot of negatives can be
+    # present - safer to avoid them for the Gaussian fit
     cube_pos = cube_conv.copy()
     cube_pos[np.where(cube_pos < 0)] = np.nan
     # set NaN values to zero - NEW v6d
     # cube_pos[np.where(np.isnan(cube_pos))] = 0
-    spec_proxy = np.zeros(nz)
-    for z in range(nz):
+    spec_proxy = np.zeros(nz_good)
+    for z in range(nz_good):
         # interpolate the NaN values
         cube_pos[z] = interp_nan(cube_pos[z],
                                  Gaussian2DKernel(x_stddev=1, y_stddev=1),
@@ -230,13 +257,11 @@ def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
         std_out = np.nanstd(mask_out[np.where(mask_out > 0)])
         spec_proxy[z] = np.nansum(mask_in)/(mean_out+std_out)
         # spec_proxy[z] = np.abs(np.sum(mask_cube[z]))
-    #cube_conv = cube_filter_lowpass(cube_pos, fwhm_size=2)
-    # discard frames that are full of NaNs (can happen with latest JWST pipeline version)
+    # cube_conv = cube_filter_lowpass(cube_pos, fwhm_size=2)
+    # discard frames that are full of NaNs
     # 2d_arr = np.reshape(cube_conv, (cube_conv.shape[0], -1))
     # nnans = np.nansum(2d_arr, axis=1)
-    good_idx = ~bad_idx
-    cube_pos = cube_pos[good_idx]
-    spec_proxy = spec_proxy[good_idx]
+
     spec_proxy[np.where(~np.isfinite(spec_proxy))] = 0
 
     med_img = cube_collapse(cube_pos, mode='wmean',
@@ -254,29 +279,40 @@ def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
     cy_c += (med_img.shape[-2]-crop_sz)//2
     cx_c += (med_img.shape[-1]-crop_sz)//2
 
-    res_fit = fit_2dgaussian_bpm(med_img-Imin,  # mask_circle(med_img, 10, mode='out', # cy=cy_tmp, cx=cx_tmp),
-                                 cent=(cx_c, cy_c), crop=True,
+    res_fit = fit_2dgaussian_bpm(med_img-Imin, cent=(cx_c, cy_c), crop=True,
                                  cropsize=crop_sz, full_output=True,
                                  debug=debug)
     cy_med = float(res_fit['centroid_y'])
     cx_med = float(res_fit['centroid_x'])
 
     if method != 'gauss':
-        final_cxy[:, 1] += cy_med
-        final_cxy[:, 0] += cx_med
+        final_cxy[good_idx, 1] += cy_med
+        final_cxy[good_idx, 0] += cx_med
     else:
         # do a 2D Gaussian fit channel per channel
-        for z in tqdm(range(nz)):
+        cxy_good = np.zeros([nz_good, 2])
+        fwhm_good = np.zeros([nz_good, 3])
+        for z in tqdm(range(nz_good)):
             debug_tmp = (z == 0) & debug
-            dict_res = fit_2dgaussian_bpm(cube_conv[z], crop=True,
-                                          cent=(cx_med, cy_med),
-                                          bpm=bad_mask[z], cropsize=crop_sz,
-                                          full_output=True, debug=debug_tmp)
-            final_cxy[z, 0] = dict_res['centroid_x']
-            final_cxy[z, 1] = dict_res['centroid_y']
-            fwhm_xyt[z, 0] = dict_res['fwhm_x']
-            fwhm_xyt[z, 1] = dict_res['fwhm_y']
-            fwhm_xyt[z, 2] = dict_res['theta']
+            try:
+                dict_res = fit_2dgaussian_bpm(cube_conv[z], crop=True,
+                                              cent=(cx_med, cy_med),
+                                              bpm=bad_mask[z], cropsize=crop_sz,
+                                              full_output=True, debug=debug_tmp)
+            except:  # check what's happening!
+                # Print e.g. "p z" to know for which channel the problem occurs
+                pdb.set_trace()
+            cxy_good[z, 0] = dict_res['centroid_x']
+            cxy_good[z, 1] = dict_res['centroid_y']
+            fwhm_good[z, 0] = dict_res['fwhm_x']
+            fwhm_good[z, 1] = dict_res['fwhm_y']
+            fwhm_good[z, 2] = dict_res['theta']
+
+        final_cxy[good_idx, 0] = cxy_good[:, 0]
+        final_cxy[good_idx, 1] = cxy_good[:, 1]
+        fwhm_xyt[good_idx, 0] = fwhm_good[:, 0]
+        fwhm_xyt[good_idx, 1] = fwhm_good[:, 1]
+        fwhm_xyt[good_idx, 2] = fwhm_good[:, 2]
 
         fit_results = np.hstack([final_cxy, fwhm_xyt, flags])
         fit_results = pd.DataFrame(fit_results, columns=['x', 'y', 'fwhm_x',
@@ -302,15 +338,33 @@ def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
             print(f"number of bad center positions: {np.sum(maskl)}")
         median_values = fit_results.median()
 
-        fit_results['x'].iloc[maskl] = median_values[0]
-        fit_results['y'].iloc[maskl] = median_values[1]
+        # fit_results['x'].iloc[maskl] = median_values[0]
+        # fit_results['y'].iloc[maskl] = median_values[1]
+        # if method == 'cc':
+        #     fit_results['flags'].iloc[maskl] = 0
+        # if method == 'gauss':
+        #     fit_results['fwhm_x'].iloc[maskl] = median_values[2]
+        #     fit_results['fwhm_y'].iloc[maskl] = median_values[3]
+        #     fit_results['theta'].iloc[maskl] = median_values[4]
+        #     fit_results['flags'].iloc[maskl] = 0
+        fit_results['x'].values[maskl] = median_values[0]
+        fit_results['y'].values[maskl] = median_values[1]
         if method == 'cc':
-            fit_results['flags'].iloc[maskl] = 0
+            fit_results['flags'].values[maskl] = 0
         if method == 'gauss':
-            fit_results['fwhm_x'].iloc[maskl] = median_values[2]
-            fit_results['fwhm_y'].iloc[maskl] = median_values[3]
-            fit_results['theta'].iloc[maskl] = median_values[4]
-            fit_results['flags'].iloc[maskl] = 0
+            fit_results['fwhm_x'].values[maskl] = median_values[2]
+            fit_results['fwhm_y'].values[maskl] = median_values[3]
+            fit_results['theta'].values[maskl] = median_values[4]
+            fit_results['flags'].values[maskl] = 0
+        # fit_results.iloc[maskl, 'x'] = median_values[0]
+        # fit_results.iloc[maskl, 'y'] = median_values[1]
+        # if method == 'cc':
+        #     fit_results.iloc[maskl, 'flags'] = 0
+        # if method == 'gauss':
+        #     fit_results.iloc[maskl, 'fwhm_x'] = median_values[2]
+        #     fit_results.iloc[maskl, 'fwhm_y'] = median_values[3]
+        #     fit_results.iloc[maskl, 'theta'] = median_values[4]
+        #     fit_results.iloc[maskl, 'flags'] = 0
 
         fit_results.to_csv(bname+'_2d_fit_robust.csv', index=False)
 
@@ -332,43 +386,57 @@ def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
             interp = 'biquintic'
         else:
             interp = 'lanczos4'
-        cube_cen = cube_shift(cube, cy_med-cy_all, cx_med-cx_all, imlib=imlib,
-                              interpolation=interp)
-        err_cen = cube_shift(err, cy_med-cy_all, cx_med-cx_all, imlib=imlib,
-                             interpolation=interp)
-        wm_cen = cube_shift(wm, cy_med-cy_all, cx_med-cx_all, imlib=imlib,
-                            interpolation=interp)
-        mask_cen = cube_shift(mask, cy_med-cy_all, cx_med-cx_all, imlib='opencv',
-                              interpolation='bilinear')
 
-        # The FFT-method can leave Gibbs artefacts which show up as high=spatial frequency
-        # Smoothing with a fine Gaussian kernel deals with it while preserving flux.
+        cube[np.where(np.isnan(cube))] = 0
+        err[np.where(np.isnan(err))] = 0
+        wm[np.where(np.isnan(wm))] = 0
+
+        cube_cen = cube_shift(cube, cy_med-cy_all, cx_med-cx_all,
+                              imlib=imlib, interpolation=interp)
+        err_cen = cube_shift(err, cy_med-cy_all, cx_med-cx_all,
+                             imlib=imlib, interpolation=interp)
+        wm_cen = cube_shift(wm, cy_med-cy_all, cx_med-cx_all,
+                            imlib=imlib, interpolation=interp)
+        mask_cen = cube_shift(mask, cy_med-cy_all, cx_med-cx_all,
+                              imlib='opencv', interpolation='bilinear')
+
+        # The FFT-method can leave Gibbs artefacts which show up as
+        # high-spatial frequency noise.
+        # Smoothing with a Gaussian kernel deals with it while preserving flux.
         if smooth:
             cube_cen = cube_filter_lowpass(cube_cen, fwhm_size=1.5)
             err_cen = cube_filter_lowpass(err_cen, fwhm_size=1.5)
             wm_cen = cube_filter_lowpass(wm_cen, fwhm_size=1.5)
 
-        # Replace cube values to zero where binary mask < 0.5
-        cube_cen[np.where(mask_cen < 0.5)] = 0
-        err_cen[np.where(mask_cen < 0.5)] = 0
-        wm_cen[np.where(mask_cen < 0.5)] = 0
-        mask_cen[np.where(mask_cen < 0.5)] = 0
-        mask_cen[np.where(mask_cen >= 0.5)] = 1
+        # Replace cube values to NaN where binary mask < 0.25
+        cube_cen[np.where(mask_cen < 0.25)] = np.nan
+        err_cen[np.where(mask_cen < 0.25)] = np.nan
+        wm_cen[np.where(mask_cen < 0.25)] = 0
+        mask_cen[np.where(mask_cen < 0.25)] = 0
+        mask_cen[np.where(mask_cen >= 0.25)] = 1
         dq_cen = np.zeros_like(mask_cen)
         dq_cen[np.where(mask_cen == 0)] = 513
+
+        # consider the original cube size and replace frames that are non-zero
+        # cube_cen = cube.copy()
+        # err_cen = err.copy()
+        # wm_cen = wm.copy()
+        # cube_cen[good_idx] = good_cube_cen
+        # err_cen[good_idx] = good_err_cen
+        # wm_cen[good_idx] = good_wm_cen
 
     # write output file
     with fits.open(filename) as hdul:
         # hdul = fits.open(filename)
         # Replace the original HDU with the recentered cube and DQ
         sci_hdu = hdul['SCI']
-        sci_hdu.data = cube_cen.copy()
+        sci_hdu.data = cube_cen
         err_hdu = hdul['ERR']
-        err_hdu.data = err_cen.copy()
+        err_hdu.data = err_cen
         dq_hdu = hdul['DQ']
-        dq_hdu.data = dq_cen.copy()
+        dq_hdu.data = dq_cen
         wm_hdu = hdul['WMAP']
-        wm_hdu.data = wm_cen.copy()
+        wm_hdu.data = wm_cen
         hdul.writeto(outname, overwrite=overwrite)
 
     if verbose:
@@ -388,9 +456,10 @@ def extract_ap(fname, fname_x1d, suffix, cxy, fname_bkg=None, apcorr=None,
                sp_corr_win=15, sp_sig=5, max_nspax=2, neg_only=False,
                write_badflag=False, verbose=True, overwrite=False, debug=False):
     """
+    Extract aperture photometry.
+
     Parameters
     ----------
-
     fname: str
         s3d file name
     fname_x1d: str
@@ -437,11 +506,12 @@ def extract_ap(fname, fname_x1d, suffix, cxy, fname_bkg=None, apcorr=None,
         Whether to print more information while processing.
     overwrite : bool
         If True, overwrites output files.
-    """
 
+    """
     fname_short = splitext(fname_x1d)[0][:-4]
     if isfile(fname_short+suffix+'.fits') and not overwrite:
-        print("Spectrum already exists for {} - skipping extraction".format(fname_short))
+        msg = "Spectrum already exists for {} - skipping extraction"
+        print(msg.format(fname_short))
         return None
 
     fname_short_bkg = fname_short.replace('psf', 'bkg')
@@ -492,7 +562,7 @@ def extract_ap(fname, fname_x1d, suffix, cxy, fname_bkg=None, apcorr=None,
     # load wavelengths and define FWHM
     dm = datamodels.open(fname_x1d)
     wl = np.array(dm.spec[0].spec_table['WAVELENGTH'])
-    # lod = wl*206265*1e-6/(D*plsc)  # commented, as previous definition not consistent with ap corr fac calculation
+    # lod = wl*206265*1e-6/(D*plsc)
     fwhm = wl/plsc*0.31/8  # includes broadening factor
 
     # Identify non-zero frames in cube
@@ -503,7 +573,7 @@ def extract_ap(fname, fname_x1d, suffix, cxy, fname_bkg=None, apcorr=None,
     if ann_removal:
         FWHM_low = (0.31/8.0 * 4.88)
         FWHM_high = (0.31/8.0 * 28.34)
-        # same definition as in the notebook used to calculate aperture correction factors
+        # same def as in the notebook used to calculate ap correction factors
         rIn_int = interp1d([4.88, 28.34], [FWHM_low*5, FWHM_high*3.0], 'linear',
                            fill_value='extrapolate')
         rOut_int = interp1d([4.88, 28.34], [FWHM_low*7.5, FWHM_high*3.75],
@@ -575,7 +645,7 @@ def extract_ap(fname, fname_x1d, suffix, cxy, fname_bkg=None, apcorr=None,
                 msg += "BKG noise estimate may not be reliable."
                 print(msg)
                 # Commented to also run for 3.5 FWHM aperture:
-                #raise ValueError("Number of apertures less than 3!")
+                # raise ValueError("Number of apertures less than 3!")
             bkg_fluxes = np.zeros(nap)
             ap = 0
             c = 0
@@ -597,7 +667,7 @@ def extract_ap(fname, fname_x1d, suffix, cxy, fname_bkg=None, apcorr=None,
             bkg_flux[ch] = np.nanmean(bkg_fluxes)
             bkg_sb[ch] = bkg_flux[ch]/npix[ch]
 
-        # if requested, remove median pixel intensity far from the star (bkg proxy)
+        # if requested subtract median pixel intensity far from star (bkg proxy)
         if ann_removal:
             # new
             annulus_aperture = photutils.CircularAnnulus(cxy, r_in=rIn[ch]/plsc,
@@ -669,7 +739,8 @@ def extract_ap(fname, fname_x1d, suffix, cxy, fname_bkg=None, apcorr=None,
     del temp_weightmap
     final_badflag = final_badflag.astype('bool')
 
-    # Open x1d file containing the spectrum of the source, update the spectrum but preserve header
+    # Open x1d file containing the spectrum of the source,
+    # update the spectrum but preserve header
     hdul = fits.open(fname_x1d)
     hdul.verify('ignore')
     table = hdul[1].data
@@ -713,7 +784,7 @@ def spike_filter(cube, sp_corr_win, cxy, apsz, sig=3, max_nspax=1,
     def _outlier_corr(spec_obs, sg15, sg31, sig=3):
         spec_corr = spec_obs.copy()
         flags = np.zeros_like(spec_corr)
-        #std = sigma_clipped_stats(spec_corr-sg31, sigma=5)[2]
+        # std = sigma_clipped_stats(spec_corr-sg31, sigma=5)[2]
         std = np.std(spec_corr-sg31)
         if neg_only:
             cond = (spec_corr-sg15 < -sig*std)
@@ -734,8 +805,8 @@ def spike_filter(cube, sp_corr_win, cxy, apsz, sig=3, max_nspax=1,
     flags = np.zeros_like(spax_corr)
 
     c = 0
-    #tmp_diff15 = spax_corr.copy()
-    #tmp_diff31 = spax_corr.copy()
+    # tmp_diff15 = spax_corr.copy()
+    # tmp_diff31 = spax_corr.copy()
     for y in range(ny):
         for x in range(nx):
             # only correct where aperture photometry will be performed:
@@ -746,8 +817,8 @@ def spike_filter(cube, sp_corr_win, cxy, apsz, sig=3, max_nspax=1,
                                      polyorder=2, mode='mirror')
                 res = _outlier_corr(cube[:, y, x], sg15, sg31, sig=sig)
                 spax_corr[c, :], flags[c, :], std = res
-                #tmp_diff15[c, :] = spax_corr[c, :]-sg15
-                #tmp_diff31[c, :] = spax_corr[c, :]-sg31
+                # tmp_diff15[c, :] = spax_corr[c, :]-sg15
+                # tmp_diff31[c, :] = spax_corr[c, :]-sg31
                 if debug:
                     plt.figure(figsize=(40, 20))
                     plt.plot(range(nz), cube[:, y, x], label='ori', color='k')
@@ -769,7 +840,7 @@ def spike_filter(cube, sp_corr_win, cxy, apsz, sig=3, max_nspax=1,
     # write_fits("TMP_flag_sum.fits", flag_sum)
     # pdb.set_trace()
 
-    # final cube to be returned has spikes corrected only if present on max n spaxels
+    # final cube to be returned has spikes corrected only if on max n spaxels
     c = 0
     cond1 = flag_sum > 0
     cond2 = flag_sum < max_nspax+1
@@ -785,10 +856,10 @@ def spike_filter(cube, sp_corr_win, cxy, apsz, sig=3, max_nspax=1,
 
 
 def write_x1d(out_fname, fname_x1d, wavelength, out_fluxes, overwrite=False):
-    """
+    """Write x1d file.
+
     Parameters
     ----------
-
     out_fname: str
         Output file name
     fname_x1d: str
@@ -799,10 +870,15 @@ def write_x1d(out_fname, fname_x1d, wavelength, out_fluxes, overwrite=False):
         Fluxes to be written
     overwrite : bool
         If True, overwrites output files.
+
     """
     # load wavelengths and compare
     dm = datamodels.open(fname_x1d)
-    wl = np.array(dm.spec[0].spec_table['WAVELENGTH'])
+    try:
+        wl = np.array(dm.spec[0].spec_table['WAVELENGTH'])
+    except:
+        hdu = fits.open(fname_x1d)
+        wl = hdu[1].data['WAVELENGTH']
 
     if not np.array_equal(wavelength, wl):
         idx_ori = find_nearest(wl, wavelength[0])
@@ -811,7 +887,8 @@ def write_x1d(out_fname, fname_x1d, wavelength, out_fluxes, overwrite=False):
         idx_ori = 0
         idx_fin = len(wl)
 
-    # Open x1d file containing the spectrum of the source, update the spectrum but preserve header
+    # Open x1d file containing the spectrum of the source,
+    # update the spectrum but preserve header
     hdul = fits.open(fname_x1d)
     hdul.verify('ignore')
     table = hdul[1].data
@@ -841,7 +918,7 @@ def write_x1d(out_fname, fname_x1d, wavelength, out_fluxes, overwrite=False):
 def fit_2dgaussian_bpm(array, cent, bpm=None, crop=False, cropsize=15, fwhmx=4,
                        fwhmy=4, theta=0, threshold=False, sigfactor=6,
                        full_output=True, debug=True):
-    """ Fitting a 2D Gaussian to the 2D distribution of the data.
+    """Fit a 2D Gaussian to the 2D distribution of the data.
 
     Parameters
     ----------
@@ -1061,9 +1138,8 @@ def bend_spectrum(scal_ori, scal_end, wl):
 
 
 def find_nearest(array, value, output='index', constraint=None, n=1):
-    """
-    Function to find the indices, and optionally the values, of an array's n
-    closest elements to a certain value.
+    """Find the indices, and optionally the values, of an array's n closest\
+        elements to a certain value.
 
     Parameters
     ----------
