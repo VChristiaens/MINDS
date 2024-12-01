@@ -649,9 +649,8 @@ def res_bkg_sub(fname, fname_x1d, cxy, r_min=4, smooth_bkg=True,
         [:, 2] contains the smooth backround estimate, if requested.
 
     """
-    outfname = fname[:-5]+'{}.fits'.format(suffix)
 
-    if not isfile(outfname) or overwrite:
+    if 1:  # not isfile(outfname) or overwrite:
         if verbose:
             msg = "*** Removing residual background in {} ***"
             print(msg.format(basename(fname)))
