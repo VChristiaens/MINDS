@@ -1,6 +1,5 @@
----
-title: MINDS
----
+MINDS
+=====
 
 [![Pythonv](https://img.shields.io/badge/Python-3.10%2C%203.11-brightgreen.svg)](https://github.com/VChristiaens/MINDS)
 [![ASCL](https://img.shields.io/badge/ascl-2403.007-blue.svg?colorB=262255)](https://ascl.net/2403.007)
