@@ -300,8 +300,10 @@ def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
                                               bpm=bad_mask[z], cropsize=crop_sz,
                                               full_output=True, debug=debug_tmp)
             except:  # check what's happening!
+                print("Recentering failed for spectral frame {}".foramt(z))
                 # Print e.g. "p z" to know for which channel the problem occurs
-                pdb.set_trace()
+                if debug:
+                    pdb.set_trace()
             cxy_good[z, 0] = dict_res['centroid_x']
             cxy_good[z, 1] = dict_res['centroid_y']
             fwhm_good[z, 0] = dict_res['fwhm_x']
@@ -832,7 +834,7 @@ def spike_filter(cube, sp_corr_win, cxy, apsz, sig=3, max_nspax=1,
                     plt.savefig("TMP_plot_spike_filter.pdf",
                                 bbox_inches='tight')
                     plt.show()
-                    pdb.set_trace()
+                    #pdb.set_trace()
                 c += 1
     flag_sum = np.sum(flags, axis=0)
     # write_fits("TMP_diff31.fits", tmp_diff31)
