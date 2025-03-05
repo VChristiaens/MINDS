@@ -300,7 +300,7 @@ def recenter_cubes(filename, suffix='_cen', sig=3, method='cc',
                                               bpm=bad_mask[z], cropsize=crop_sz,
                                               full_output=True, debug=debug_tmp)
             except:  # check what's happening!
-                print("Recentering failed for spectral frame {}".foramt(z))
+                print("Recentering failed for spectral frame {}".format(z))
                 # Print e.g. "p z" to know for which channel the problem occurs
                 if debug:
                     pdb.set_trace()
