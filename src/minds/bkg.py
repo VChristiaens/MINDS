@@ -411,6 +411,7 @@ def clean_background_subtraction(
 
                 ndith = len(dith_files)
                 if ndith != 4 and ndith != 2:
+                    pdb.set_trace()
                     raise ValueError(
                         "Only {} dither files found.".format(ndith))
 
