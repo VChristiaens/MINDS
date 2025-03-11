@@ -615,7 +615,7 @@ def detect_outlier_lines(bkg, dq, sig=5):
 
 
 def res_bkg_sub(fname, fname_x1d, cxy, r_min=4, smooth_bkg=True,
-                suffix='_rbgsub', verbose=True, overwrite=True):
+                suffix='_rbgsub', perc=50, verbose=True, overwrite=True):
     """Subtract residual background level estimated beyond a certain radius, in\
     slices of Stage3 spectral cubes.
 
@@ -633,6 +633,8 @@ def res_bkg_sub(fname, fname_x1d, cxy, r_min=4, smooth_bkg=True,
     smooth_bkg: bool, opt
         Whether to subtract a smooth (Savitzky-Golay filter) background level
         estimated over the full band, instead of the individual BKG levels.
+    perc: float, opt
+        Percentile to consider in the annulus as background estimate.
     suffix: str, opt
         Suffix appended to original filename to save bad pixel corrected cube.
     verbose: bool, opt
@@ -699,7 +701,8 @@ def res_bkg_sub(fname, fname_x1d, cxy, r_min=4, smooth_bkg=True,
         for z, ch in enumerate(good_idx):
             full_mask[ch] = mask_circle(full_mask[ch], r_min*fwhm[ch],
                                         cy=cxy[1], cx=cxy[0], fillwith=np.nan)
-            rbgsub[ch] = np.nanmedian(cube[ch]*full_mask[ch])
+            # rbgsub[ch] = np.nanmedian(cube[ch]*full_mask[ch])
+            rbgsub[ch] = np.nanpercentile(cube[ch]*full_mask[ch], perc)
             if rbgsub[ch] == 0:
                 nbads += 1
             else:
