@@ -178,7 +178,7 @@ def run_straylight(filename, outdir):
 
 def runspec2(filename, outdir, psff=False, psff_dir='./psff_ref/',
              phot_ver='9B.04.19', fringe_ver='2', pixel_replace_algo='mingrad',
-             dith_combi_method='drizzle'):
+             dith_combi_method='drizzle', do_residual_fringe=True):
     # This initial setup is just to make sure that we get the latest parameter reference files
     # pulled in for our files.  This is a temporary workaround to get around an issue with
     # how this pipeline calling method works.
@@ -242,7 +242,7 @@ def runspec2(filename, outdir, psff=False, psff_dir='./psff_ref/',
     spec2.photom.skip = False
 
     # Residual fringe correction
-    if psff:
+    if psff or not do_residual_fringe:
         spec2.residual_fringe.skip = True
     else:
         spec2.residual_fringe.skip = False
