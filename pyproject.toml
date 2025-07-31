@@ -25,6 +25,7 @@ dependencies = [
     "ipywidgets>=8",
     "notebook",
     "ipympl",
+    "bettermoments"
 ]
 dynamic = ['version']
 
