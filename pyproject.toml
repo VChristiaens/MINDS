@@ -18,6 +18,7 @@ dependencies = [
     "vip_hci>1.4.0",
     "numpy<2.0",
     "opencv-python",
+    "crds<13.0",
     "jwst",
     "spectres",
     "pybaselines",
